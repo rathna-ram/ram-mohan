@@ -7,7 +7,7 @@ import {
   useMemo,
   useCallback
 } from "react";
-import Modal from "../components/modal";
+import Modal from "../components/Modal";
 import { AppContext } from "../context/AppContext";
 import { useNotification } from "../context/NotificationContext";
 import {
