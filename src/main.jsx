@@ -10,9 +10,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <HashRouter>
       <AppProvider>
-        
+        <NotificationProvider>
           <App />
-        
+        </NotificationProvider>
       </AppProvider>
     </HashRouter>
   </React.StrictMode>
