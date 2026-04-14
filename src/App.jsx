@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense, useContext } from "react";
 import Header from "./components/Header";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -13,26 +13,21 @@ const Login = lazy(() => import("./Pages/Login"));
 const UserProfile = lazy(() => import("./Pages/UserProfile"));
 
 function App() {
-  const { theme } = useContext(AppContext); // ✅ IMPORTANT
+  const { theme } = useContext(AppContext);
 
   return (
     <div
-      className={`min-h-screen transition duration-300 ${
+      className={`min-h-screen ${
         theme === "dark"
           ? "bg-slate-900 text-white"
           : "bg-gray-100 text-black"
       }`}
     >
-      <BrowserRouter>
+      {/* ✅ CHANGE HERE */}
+      <HashRouter>
         <Header />
 
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center h-screen">
-              Loading...
-            </div>
-          }
-        >
+        <Suspense fallback={<div>Loading...</div>}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
@@ -66,7 +61,7 @@ function App() {
             />
           </Routes>
         </Suspense>
-      </BrowserRouter>
+      </HashRouter>
     </div>
   );
 }
