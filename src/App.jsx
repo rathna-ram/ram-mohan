@@ -1,38 +1,41 @@
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense, useContext } from "react";
-import Header from "./components/Header";
-import ProtectedRoute from "./components/ProtectedRoute";
-import { AppContext } from "./context/AppContext";
+import Header from "./components/Header.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import { AppContext } from "./context/AppContext.jsx";
 
-// Lazy pages
-const Home = lazy(() => import("./Pages/Home"));
-const Cards = lazy(() => import("./Pages/Cards"));
-const About = lazy(() => import("./Pages/About"));
-const Dashboard = lazy(() => import("./Pages/Dashboard"));
-const Login = lazy(() => import("./Pages/Login"));
-const UserProfile = lazy(() => import("./Pages/UserProfile"));
+// Lazy Imports (with .jsx)
+const Home = lazy(() => import("./Pages/Home.jsx"));
+const Login = lazy(() => import("./Pages/Login.jsx"));
+const About = lazy(() => import("./Pages/About.jsx"));
+const Cards = lazy(() => import("./Pages/Cards.jsx"));
+const Dashboard = lazy(() => import("./Pages/Dashboard.jsx"));
+const UserProfile = lazy(() => import("./Pages/UserProfile.jsx"));
 
 function App() {
   const { theme } = useContext(AppContext);
 
   return (
-    <div
-      className={`min-h-screen ${
-        theme === "dark"
-          ? "bg-slate-900 text-white"
-          : "bg-gray-100 text-black"
-      }`}
-    >
-      {/* ✅ CHANGE HERE */}
-      <HashRouter>
+    <div className={theme === "dark" ? "dark" : ""}>
+      <BrowserRouter>
+        {/* Header */}
         <Header />
 
-        <Suspense fallback={<div>Loading...</div>}>
+        {/* Lazy Loading */}
+        <Suspense
+          fallback={
+            <div className="flex justify-center items-center min-h-screen">
+              <h1 className="text-2xl">Loading...</h1>
+            </div>
+          }
+        >
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/about" element={<About />} />
 
+            {/* Protected Routes */}
             <Route
               path="/cards"
               element={
@@ -61,7 +64,7 @@ function App() {
             />
           </Routes>
         </Suspense>
-      </HashRouter>
+      </BrowserRouter>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import Card from "../components/Card";
+import Card from "../components/Card.jsx";
 import {
   useState,
   useEffect,
@@ -7,23 +7,29 @@ import {
   useMemo,
   useCallback
 } from "react";
-import Modal from "../components/Modal";
-import { AppContext } from "../context/AppContext";
-import { useNotification } from "../context/NotificationContext";
+import Modal from "../components/Modal.jsx";
+import { AppContext } from "../context/AppContext.jsx";
+import { useNotification } from "../context/NotificationContext.jsx";
 import {
   getCards,
   createCard,
   updateCard,
   deleteCard
-} from "../Services/Api";
+} from "../Services/Api.js";
 
 const Cards = () => {
 
-  const { theme, role, cards, setCards } = useContext(AppContext);
-  const { showToast } = useNotification();
+  const { theme, user, cards, setCards } = useContext(AppContext);
+  const role = user?.role;
+
+  // ✅ TOAST SAFE
+  let showToast = () => {};
+  try {
+    const notify = useNotification();
+    showToast = notify?.showToast || (() => {});
+  } catch {}
 
   const [loading, setLoading] = useState(true);
-  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
@@ -32,11 +38,11 @@ const Cards = () => {
 
   const [feedbacks, setFeedbacks] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [cardsPerPage] = useState(3);
+  const cardsPerPage = 3;
+
   const [selectedCard, setSelectedCard] = useState(null);
   const [editId, setEditId] = useState(null);
   const [sortOrder, setSortOrder] = useState("");
-
   const [notification, setNotification] = useState(false);
 
   const prevCardsRef = useRef([]);
@@ -54,53 +60,52 @@ const Cards = () => {
     return newIds.some(id => !oldIds.includes(id));
   };
 
-  // 📡 FETCH CARDS
+  // 📡 FETCH
   const fetchCards = useCallback(async (showLoader = false) => {
     try {
       if (showLoader) setLoading(true);
-      else setIsFetching(true);
 
       const data = await getCards();
 
-      const updated = data.slice(0, 6).map(item => ({
+      const updated = data.slice(0, 9).map(item => ({
         ...item,
         image: `https://picsum.photos/300/200?random=${item.id}`
       }));
 
-      if (prevCardsRef.current.length === 0) {
-        setCards(updated);
-      } else if (hasNewData(prevCardsRef.current, updated)) {
-        setNotification(true);
-        setCards(updated);
-        showToast("New data available 🚀", "info");
+      // 🔔 Detect new data
+      if (prevCardsRef.current.length) {
+        if (hasNewData(prevCardsRef.current, updated)) {
+          setNotification(true);
+          showToast("New cards available 🚀", "info");
+        }
       }
 
+      setCards(updated);
       prevCardsRef.current = updated;
 
     } catch (err) {
       setError(err.message);
       showToast("Failed to fetch cards ❌", "error");
     } finally {
-      if (showLoader) setLoading(false);
-      else setIsFetching(false);
+      setLoading(false);
     }
-  }, [setCards, showToast]);
+  }, [setCards]);
 
   // 🚀 INITIAL LOAD
   useEffect(() => {
     fetchCards(true);
   }, [fetchCards]);
 
-  // 🔁 POLLING (optimized interval)
+  // 🔁 POLLING
   useEffect(() => {
     const interval = setInterval(() => {
       fetchCards();
-    }, 2000); // 🔥 improved (20 sec)
+    }, 20000);
 
     return () => clearInterval(interval);
   }, [fetchCards]);
 
-  // 🔔 AUTO HIDE TOP BAR
+  // 🔔 AUTO HIDE
   useEffect(() => {
     if (notification) {
       const timer = setTimeout(() => setNotification(false), 5000);
@@ -108,15 +113,15 @@ const Cards = () => {
     }
   }, [notification]);
 
-  // 🔄 REFRESH
-  const handleRefresh = useCallback(() => {
+  // 🔄 REFRESH BUTTON
+  const handleRefresh = () => {
     fetchCards(true);
     setNotification(false);
-    showToast("Cards refreshed 🔄", "info");
-  }, [fetchCards, showToast]);
+    showToast("Cards refreshed 🔄", "success");
+  };
 
   // ❌ DELETE
-  const handleDelete = useCallback(async (id) => {
+  const handleDelete = async (id) => {
     try {
       await deleteCard(id);
       setCards(prev => prev.filter(card => card.id !== id));
@@ -125,23 +130,22 @@ const Cards = () => {
       setError(err.message);
       showToast("Delete failed ❌", "error");
     }
-  }, [setCards, showToast]);
+  };
 
   // ✏️ EDIT
-  const handleEdit = useCallback((card) => {
+  const handleEdit = (card) => {
     setFormData({
       title: card.title,
       description: card.body,
       image: card.image
     });
     setEditId(card.id);
-  }, []);
+  };
 
   // ➕ CREATE / UPDATE
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ VALIDATION (ADDED)
     if (!formData.title || !formData.description) {
       showToast("Please fill all fields ❌", "error");
       return;
@@ -172,23 +176,16 @@ const Cards = () => {
         });
 
         const newData = [{ ...newCard, image: formData.image }, ...cards];
-
         setCards(newData);
-        setNotification(true);
-        prevCardsRef.current = newData;
 
         showToast("New card added 🎉", "success");
       }
 
-      setFormData({
-        title: "",
-        description: "",
-        image: ""
-      });
+      setFormData({ title: "", description: "", image: "" });
 
     } catch (err) {
       setError(err.message);
-      showToast("Operation failed ❌", "error");
+      showToast("Save failed ❌", "error");
     }
   };
 
@@ -219,15 +216,10 @@ const Cards = () => {
     });
   }, [filteredCards, sortOrder]);
 
-  const currentCards = useMemo(() => {
-    const indexOfLast = currentPage * cardsPerPage;
-    const indexOfFirst = indexOfLast - cardsPerPage;
-    return sortedCards.slice(indexOfFirst, indexOfLast);
-  }, [sortedCards, currentPage, cardsPerPage]);
-
-  const totalPages = useMemo(() => {
-    return Math.ceil(sortedCards.length / cardsPerPage);
-  }, [sortedCards, cardsPerPage]);
+  const indexOfLast = currentPage * cardsPerPage;
+  const indexOfFirst = indexOfLast - cardsPerPage;
+  const currentCards = sortedCards.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(sortedCards.length / cardsPerPage);
 
   if (loading) return <h2 className="text-center mt-10">Loading...</h2>;
   if (error) return <h2 className="text-center text-red-500">{error}</h2>;
@@ -237,148 +229,132 @@ const Cards = () => {
       theme === "dark" ? "bg-slate-900 text-white" : "bg-gray-100 text-black"
     }`}>
 
-      {/* 🔔 TOP BAR */}
+      {/* 🔔 Notification */}
       {notification && (
-        <div className="fixed top-0 left-0 w-full bg-green-500 text-white p-3 text-center z-50 flex justify-center items-center gap-4 shadow-md">
-          🚀 New data available!
+        <div className="fixed top-0 w-full bg-green-500 text-white p-3 text-center">
+          New data available 🚀
+        </div>
+      )}
+
+      <div className="w-full flex justify-center mb-6">
+
+  <div className="flex flex-col items-center">
+
+    <h1 className="text-4xl font-bold mb-3 text-center">
+      Cards Section
+    </h1>
+
+    <button
+      onClick={handleRefresh}
+      className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-lg shadow-md hover:scale-105 transition"
+    >
+      Refresh Data
+    </button>
+
+  </div>
+
+</div>
+
+      {/* FORM */}
+      {role === "admin" && (
+        <form onSubmit={handleSubmit} className="max-w-md mx-auto mb-6 flex flex-col gap-3">
+          <input
+            placeholder="Title"
+            value={formData.title}
+            onChange={(e)=>setFormData({...formData, title:e.target.value})}
+            className="border p-2"
+          />
+          <input
+            placeholder="Description"
+            value={formData.description}
+            onChange={(e)=>setFormData({...formData, description:e.target.value})}
+            className="border p-2"
+          />
+          <input
+            placeholder="Image"
+            value={formData.image}
+            onChange={(e)=>setFormData({...formData, image:e.target.value})}
+            className="border p-2"
+          />
+          <button className="bg-blue-500 text-white p-2">
+            {editId ? "Update" : "Add"}
+          </button>
+        </form>
+      )}
+
+      <div className="flex justify-center gap-4 mt-6 flex-wrap">
+
+  {/* 🔍 SEARCH */}
+  <input
+    placeholder="Search..."
+    value={search}
+    onChange={(e)=>setSearch(e.target.value)}
+    className="border p-2 rounded w-60"
+  />
+
+  {/* 🔽 SORT */}
+  <select
+    value={sortOrder}
+    onChange={(e) => setSortOrder(e.target.value)}
+    className="border p-2 rounded"
+  >
+    <option value="">Sort By</option>
+    <option value="asc">Title A → Z</option>
+    <option value="desc">Title Z → A</option>
+  </select>
+
+</div>
+
+     {/* CARDS */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  {currentCards.length > 0 ? (
+    currentCards.map(card => (
+      <Card
+        key={card.id}
+        {...card}
+        openModal={setSelectedCard}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        feedbacks={feedbacks}
+        setFeedbacks={setFeedbacks}
+      />
+    ))
+  ) : (
+    <p className="col-span-3 text-center text-red-500 text-lg font-semibold mt-6">
+      No cards found
+    </p>
+  )}
+</div>
+
+      {/* PAGINATION */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-6 mt-10">
           <button
-            onClick={handleRefresh}
-            className="bg-white text-green-600 px-4 py-1 rounded-md font-semibold hover:bg-gray-200"
+            onClick={() => setCurrentPage((p) => p - 1)}
+            disabled={currentPage === 1}
+            className="px-5 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
           >
-            Refresh
+            Previous
+          </button>
+
+          <span className="font-semibold">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            onClick={() => setCurrentPage((p) => p + 1)}
+            disabled={currentPage === totalPages}
+            className="px-5 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400"
+          >
+            Next
           </button>
         </div>
       )}
 
-      <h1 className="text-4xl font-bold text-center mb-6">
-        Cards Section
-      </h1>
-
-      {/* REFRESH */}
-      <div className="flex justify-center mb-6">
-        <button
-          onClick={handleRefresh}
-          className="bg-purple-600 text-white px-6 py-2 rounded-lg"
-        >
-          Refresh Data
-        </button>
-      </div>
-
-      {/* FORM */}
-      {role === "admin" && (
-        <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md mx-auto mb-8">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-
-            <input
-              type="text"
-              placeholder="Title"
-              value={formData.title}
-              onChange={(e)=>setFormData({...formData, title:e.target.value})}
-              className="border p-2 rounded-md"
-            />
-
-            <input
-              type="text"
-              placeholder="Description"
-              value={formData.description}
-              onChange={(e)=>setFormData({...formData, description:e.target.value})}
-              className="border p-2 rounded-md"
-            />
-
-            <input
-              type="text"
-              placeholder="Image URL"
-              value={formData.image}
-              onChange={(e)=>setFormData({...formData, image:e.target.value})}
-              className="border p-2 rounded-md"
-            />
-
-            <button className="bg-blue-600 text-white p-2 rounded-md">
-              {editId ? "Update Card" : "Add Card"}
-            </button>
-
-          </form>
-        </div>
-      )}
-
-      {/* SEARCH + SORT */}
-      <div className="flex flex-col md:flex-row gap-4 justify-center items-center mb-6">
-
-        <input
-          type="text"
-          placeholder="Search..."
-          value={search}
-          onChange={(e)=>setSearch(e.target.value)}
-          className="border px-4 py-2 rounded-md w-64"
-        />
-
-        {isSearching && (
-          <span className="text-blue-500 text-sm">Searching...</span>
-        )}
-
-        <select
-          value={sortOrder}
-          onChange={(e)=>setSortOrder(e.target.value)}
-          className="border px-4 py-2 rounded-md"
-        >
-          <option value="">Sort By</option>
-          <option value="asc">A → Z</option>
-          <option value="desc">Z → A</option>
-        </select>
-      </div>
-
-      {/* CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        {currentCards.length > 0 ? (
-          currentCards.map(card => (
-            <Card
-              key={card.id}
-              {...card}
-              openModal={setSelectedCard}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              feedbacks={feedbacks}
-              setFeedbacks={setFeedbacks}
-            />
-          ))
-        ) : (
-          <p className="text-center col-span-full text-gray-500">
-            No cards found 😢
-          </p>
-        )}
-      </div>
-
-      {/* PAGINATION */}
-      <div className="flex justify-center items-center gap-6 mt-10">
-        <button
-          onClick={() => setCurrentPage(p => p - 1)}
-          disabled={currentPage === 1}
-          className="px-5 py-2 text-white bg-blue-500 rounded disabled:bg-gray-400"
-        >
-          Previous
-        </button>
-
-        <span>
-          Page {currentPage} of {totalPages}
-        </span>
-
-        <button
-          onClick={() => setCurrentPage(p => p + 1)}
-          disabled={currentPage === totalPages}
-          className="px-5 py-2 text-white bg-blue-500 rounded disabled:bg-gray-400"
-        >
-          Next
-        </button>
-      </div>
-
       {/* MODAL */}
       {selectedCard && (
-        <Modal
-          card={selectedCard}
-          onClose={() => setSelectedCard(null)}
-        />
+        <Modal card={selectedCard} onClose={() => setSelectedCard(null)} />
       )}
-
     </div>
   );
 };

@@ -3,8 +3,13 @@ import { AppContext } from "../context/AppContext";
 import { useNotification } from "../context/NotificationContext";
 
 const UserProfile = () => {
-  const { theme, setTheme, updateProfile } = useContext(AppContext);
-  const { showToast } = useNotification();
+  const { theme, setTheme, updateProfile, user } = useContext(AppContext);
+
+  let showToast = () => {};
+  try {
+    const notify = useNotification();
+    showToast = notify?.showToast || (() => {});
+  } catch {}
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -12,15 +17,19 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // ✅ LOAD PROFILE
+  // ✅ LOAD PROFILE (fallback from user also)
   useEffect(() => {
     const savedProfile = JSON.parse(localStorage.getItem("profile"));
+
     if (savedProfile) {
       setName(savedProfile.name || "");
       setEmail(savedProfile.email || "");
       setProfileImage(savedProfile.image || "");
+    } else if (user) {
+      setName(user.name || "");
+      setEmail(user.email || "");
     }
-  }, []);
+  }, [user]);
 
   // 📸 IMAGE UPLOAD
   const handleImageChange = (e) => {
@@ -28,7 +37,7 @@ const UserProfile = () => {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      showToast("Upload a valid image ❌", "error");
+      showToast("Upload valid image ❌", "error");
       return;
     }
 
@@ -42,10 +51,7 @@ const UserProfile = () => {
     reader.readAsDataURL(file);
   };
 
-  // ❌ REMOVE IMAGE
-  const removeImage = () => {
-    setProfileImage("");
-  };
+  const removeImage = () => setProfileImage("");
 
   // 💾 SAVE
   const handleSubmit = (e) => {
@@ -65,23 +71,21 @@ const UserProfile = () => {
     setLoading(true);
 
     const data = { name, email, image: profileImage };
-
     localStorage.setItem("profile", JSON.stringify(data));
 
     updateProfile({
       name,
       email,
-      profilePic: profileImage,
+      profilePic: profileImage
     });
 
     setTimeout(() => {
       setLoading(false);
       setIsEditing(false);
       showToast("Profile updated ✅", "success");
-    }, 1200);
+    }, 800);
   };
 
-  // 🔄 CANCEL
   const handleCancel = () => {
     const savedProfile = JSON.parse(localStorage.getItem("profile"));
     setName(savedProfile?.name || "");
@@ -90,35 +94,33 @@ const UserProfile = () => {
     setIsEditing(false);
   };
 
-  // 📊 PROFILE COMPLETION
   const completion =
     (name ? 33 : 0) + (email ? 33 : 0) + (profileImage ? 34 : 0);
 
   return (
     <div
-      className={`min-h-screen flex justify-center items-center px-4 transition ${
+      className={`min-h-screen flex justify-center items-center px-4 ${
         theme === "dark"
           ? "bg-slate-900 text-white"
           : "bg-gray-100 text-black"
       }`}
     >
-      <div className="w-full max-w-md p-6 rounded-2xl shadow-xl bg-white dark:bg-slate-800">
+      <div className="w-full max-w-md p-6 rounded-2xl shadow-xl bg-white text-black dark:bg-slate-800 dark:text-white">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">User Profile</h2>
 
-          {!isEditing ? (
+          {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
               className="text-blue-500 text-sm"
             >
               Edit
             </button>
-          ) : null}
+          )}
         </div>
 
-        {/* PROGRESS BAR */}
+        {/* PROGRESS */}
         <div className="mb-4">
           <div className="h-2 bg-gray-300 rounded">
             <div
@@ -143,7 +145,7 @@ const UserProfile = () => {
 
           {isEditing && (
             <>
-              <label className="absolute bottom-0 bg-blue-500 text-white text-xs px-2 py-1 rounded cursor-pointer opacity-0 group-hover:opacity-100 transition">
+              <label className="absolute bottom-0 bg-blue-500 text-white text-xs px-2 py-1 rounded cursor-pointer opacity-0 group-hover:opacity-100">
                 Change
                 <input
                   type="file"
@@ -172,7 +174,7 @@ const UserProfile = () => {
             disabled={!isEditing}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="p-2 border rounded-md disabled:opacity-60"
+            className="p-2 border rounded-md"
             placeholder="Name"
           />
 
@@ -181,7 +183,7 @@ const UserProfile = () => {
             disabled={!isEditing}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="p-2 border rounded-md disabled:opacity-60"
+            className="p-2 border rounded-md"
             placeholder="Email"
           />
 
@@ -192,8 +194,8 @@ const UserProfile = () => {
               <button
                 type="button"
                 onClick={() => setTheme("light")}
-                className={`flex-1 py-1 rounded-full ${
-                  theme === "light" ? "bg-white shadow" : ""
+                className={`flex-1 py-1 rounded ${
+                  theme === "light" ? "bg-white" : ""
                 }`}
               >
                 Light
@@ -202,7 +204,7 @@ const UserProfile = () => {
               <button
                 type="button"
                 onClick={() => setTheme("dark")}
-                className={`flex-1 py-1 rounded-full ${
+                className={`flex-1 py-1 rounded ${
                   theme === "dark" ? "bg-black text-white" : ""
                 }`}
               >
@@ -211,25 +213,16 @@ const UserProfile = () => {
             </div>
           </div>
 
-          {/* ACTION BUTTONS */}
           {isEditing && (
             <div className="flex gap-2 mt-3">
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition flex justify-center items-center gap-2"
-              >
-                {loading && (
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                )}
+              <button className="flex-1 bg-green-600 text-white py-2 rounded">
                 {loading ? "Saving..." : "Save"}
               </button>
 
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 bg-gray-400 text-white py-2 rounded-md hover:bg-gray-500"
+                className="flex-1 bg-gray-400 text-white py-2 rounded"
               >
                 Cancel
               </button>

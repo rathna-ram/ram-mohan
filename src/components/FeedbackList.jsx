@@ -1,28 +1,33 @@
-const FeedbackList = ({ feedbacks, id, setFeedbacks }) => {
+const FeedbackList = ({ feedbacks = [], id, setFeedbacks }) => {
 
-  const handleDelete = (index) => {
-    setFeedbacks(prev => {
-      const updated = [...(prev[id] || [])];
-      updated.splice(index, 1);
+  const handleDelete = (feedbackId) => {
+    setFeedbacks((prev) => {
+      const updated = (prev?.[id] || []).filter(
+        (item) => item.id !== feedbackId
+      );
 
       return {
         ...prev,
-        [id]: updated
+        [id]: updated,
       };
     });
   };
 
-  if (!feedbacks.length) {
-    return <p className="text-gray-500 text-sm">No feedback yet</p>;
+  if (!feedbacks || feedbacks.length === 0) {
+    return (
+      <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">
+        No feedback yet
+      </p>
+    );
   }
 
   return (
     <div className="mt-3 space-y-2 max-h-40 overflow-y-auto">
 
-      {feedbacks.map((item, index) => (
+      {feedbacks.map((item) => (
         <div
-          key={index}
-          className="border-b pb-2 flex justify-between items-start"
+          key={item.id} // ✅ FIXED (no index)
+          className="border-b pb-2 flex justify-between items-start dark:border-gray-600"
         >
           <div>
             {/* ⭐ Stars */}
@@ -32,13 +37,15 @@ const FeedbackList = ({ feedbacks, id, setFeedbacks }) => {
             </div>
 
             {/* 💬 Comment */}
-            <p className="text-sm">{item.comment}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-200">
+              {item.comment}
+            </p>
           </div>
 
           {/* ❌ Delete */}
           <button
-            onClick={() => handleDelete(index)}
-            className="text-red-500 text-xs"
+            onClick={() => handleDelete(item.id)}
+            className="text-red-500 text-xs hover:underline"
           >
             Delete
           </button>

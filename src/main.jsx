@@ -1,19 +1,17 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
+import App from "./App.jsx";
 import "./index.css";
-import { NotificationProvider } from "./context/NotificationContext";
-import { AppProvider } from "./context/AppContext";
-import { HashRouter } from "react-router-dom";
+
+import { NotificationProvider } from "./context/NotificationContext.jsx";
+import { AppProvider } from "./context/AppContext.jsx"; // ✅ FIX extension
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <HashRouter>
-      <AppProvider>
-        <NotificationProvider>
-          <App />
-        </NotificationProvider>
-      </AppProvider>
-    </HashRouter>
+    <AppProvider> {/* ✅ MUST wrap */}
+      <NotificationProvider>
+        <App />
+      </NotificationProvider>
+    </AppProvider>
   </React.StrictMode>
 );

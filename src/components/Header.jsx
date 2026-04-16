@@ -1,16 +1,30 @@
 import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AppContext } from "../context/AppContext";
-import { useNotification } from "../context/NotificationContext";
+import { AppContext } from "../context/AppContext.jsx";
+import { useNotification } from "../context/NotificationContext.jsx";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const { showToast } = useNotification();
-  const { theme, toggleTheme, isLoggedIn, logout, user } =
-    useContext(AppContext);
-
   const navigate = useNavigate();
+
+  // ✅ Safe Context
+  const appContext = useContext(AppContext) || {};
+  const {
+    theme = "light",
+    toggleTheme = () => {},
+    isLoggedIn = false,
+    logout = () => {},
+    user = {},
+    switchRole = () => {}
+  } = appContext;
+
+  // ✅ Toast Safe
+  let showToast = () => {};
+  try {
+    const notification = useNotification();
+    showToast = notification?.showToast || (() => {});
+  } catch (e) {}
 
   const handleLogout = () => {
     logout();
@@ -22,20 +36,20 @@ const Header = () => {
   return (
     <header
       className={`sticky top-0 z-50 ${
-        theme === "dark"                   
+        theme === "dark"
           ? "bg-slate-900 text-white"
           : "bg-white text-black shadow"
       }`}
     >
       <div className="container mx-auto flex items-center justify-between px-4 py-3">
 
-        {/* Logo */}
+        {/* 🌐 LOGO */}
         <div className="flex items-center space-x-2">
           <span className="text-blue-500 text-2xl">🌐</span>
           <span className="text-xl font-bold">RathnaWeb</span>
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* 📱 MOBILE BUTTON */}
         <button
           className="md:hidden text-2xl"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -43,30 +57,43 @@ const Header = () => {
           ☰
         </button>
 
-        {/* ✅ DESKTOP NAV */}
+        {/* 💻 DESKTOP NAV */}
         <nav className="hidden md:flex items-center space-x-6">
+
           <Link to="/">Home</Link>
           <Link to="/cards">Cards</Link>
           <Link to="/dashboard">Dashboard</Link>
           <Link to="/about">About</Link>
+
           {isLoggedIn && <Link to="/profile">Profile</Link>}
 
-          {/* ✅ ROLE BADGE */}
+          {/* ✅ ROLE BUTTON LIKE YOUR IMAGE */}
           {isLoggedIn && (
-            <span className="px-3 py-1 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded text-sm font-medium">
-              {user?.role === "admin" ? "Admin" : "User"}
-            </span>
+            <select
+              value={user?.role || "user"}
+              onChange={(e) => {
+                switchRole(e.target.value);
+                showToast(`Switched to ${e.target.value} ✅`, "info");
+              }}
+              className="px-4 py-1 rounded-md border shadow-sm 
+                         bg-white text-black 
+                         dark:bg-slate-700 dark:text-white 
+                         cursor-pointer"
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
           )}
 
-          {/* Theme Toggle */}
+          {/* 🌙 THEME */}
           <button
             onClick={toggleTheme}
-            className="bg-blue-500 text-white px-3 py-1 rounded"
+            className="bg-blue-500 text-white px-3 py-1 rounded flex items-center gap-1"
           >
             {theme === "dark" ? "Light" : "Dark"}
           </button>
 
-          {/* Auth Buttons */}
+          {/* 🔐 AUTH */}
           {isLoggedIn ? (
             <button
               onClick={handleLogout}
@@ -84,9 +111,9 @@ const Header = () => {
         </nav>
       </div>
 
-      {/* ✅ MOBILE MENU */}
+      {/* 📱 MOBILE MENU */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-slate-900 shadow-lg px-4 py-4 space-y-3">
+        <div className="md:hidden bg-white dark:bg-slate-900 shadow px-4 py-4 space-y-3">
 
           <Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link>
           <Link to="/cards" onClick={() => setIsMenuOpen(false)}>Cards</Link>
@@ -99,14 +126,24 @@ const Header = () => {
             </Link>
           )}
 
-          {/* ✅ ROLE BADGE MOBILE */}
+          {/* ✅ MOBILE ROLE SELECT */}
           {isLoggedIn && (
-            <span className="block px-3 py-2 bg-gray-300 dark:bg-gray-700 text-black dark:text-white rounded text-sm text-center">
-              {user?.role === "admin" ? "Admin" : "User"}
-            </span>
+            <select
+              value={user?.role || "user"}
+              onChange={(e) => {
+                switchRole(e.target.value);
+                showToast(`Switched to ${e.target.value} ✅`, "info");
+              }}
+              className="w-full px-4 py-2 rounded border 
+                         bg-white text-black 
+                         dark:bg-slate-700 dark:text-white"
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
           )}
 
-          {/* Theme Toggle */}
+          {/* THEME */}
           <button
             onClick={toggleTheme}
             className="w-full bg-blue-500 text-white py-2 rounded"
@@ -114,7 +151,7 @@ const Header = () => {
             {theme === "dark" ? "Light Mode" : "Dark Mode"}
           </button>
 
-          {/* Auth Buttons */}
+          {/* AUTH */}
           {isLoggedIn ? (
             <button
               onClick={handleLogout}
