@@ -5,30 +5,22 @@ import { useNotification } from "../context/NotificationContext.jsx";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
   const navigate = useNavigate();
 
-  // ✅ Safe Context
-  const appContext = useContext(AppContext) || {};
   const {
-    theme = "light",
-    toggleTheme = () => {},
-    isLoggedIn = false,
-    logout = () => {},
-    user = {},
-    switchRole = () => {}
-  } = appContext;
+    theme,
+    toggleTheme,
+    isLoggedIn,
+    logout,
+    user,
+    switchRole
+  } = useContext(AppContext);
 
-  // ✅ Toast Safe
-  let showToast = () => {};
-  try {
-    const notification = useNotification();
-    showToast = notification?.showToast || (() => {});
-  } catch (e) {}
+  const { showToast } = useNotification();
 
   const handleLogout = () => {
-    logout();
-    showToast("Logged out successfully 👋", "success");
+    logout?.();
+    showToast?.("Logged out successfully 👋", "success");
     navigate("/");
     setIsMenuOpen(false);
   };
@@ -58,85 +50,28 @@ const Header = () => {
         </button>
 
         {/* 💻 DESKTOP NAV */}
-        <nav className="hidden md:flex items-center space-x-6">
+        <nav className="hidden md:flex items-center space-x-6 font-medium">
 
-          <Link to="/">Home</Link>
-          <Link to="/cards">Cards</Link>
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/about">About</Link>
-
-          {isLoggedIn && <Link to="/profile">Profile</Link>}
-
-          {/* ✅ ROLE BUTTON LIKE YOUR IMAGE */}
-          {isLoggedIn && (
-            <select
-              value={user?.role || "user"}
-              onChange={(e) => {
-                switchRole(e.target.value);
-                showToast(`Switched to ${e.target.value} ✅`, "info");
-              }}
-              className="px-4 py-1 rounded-md border shadow-sm 
-                         bg-white text-black 
-                         dark:bg-slate-700 dark:text-white 
-                         cursor-pointer"
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
-          )}
-
-          {/* 🌙 THEME */}
-          <button
-            onClick={toggleTheme}
-            className="bg-blue-500 text-white px-3 py-1 rounded flex items-center gap-1"
-          >
-            {theme === "dark" ? "Light" : "Dark"}
-          </button>
-
-          {/* 🔐 AUTH */}
-          {isLoggedIn ? (
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 text-white px-3 py-1 rounded"
-            >
-              Logout
-            </button>
-          ) : (
-            <Link to="/login">
-              <button className="bg-green-500 text-white px-3 py-1 rounded">
-                Login
-              </button>
-            </Link>
-          )}
-        </nav>
-      </div>
-
-      {/* 📱 MOBILE MENU */}
-      {isMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-slate-900 shadow px-4 py-4 space-y-3">
-
-          <Link to="/" onClick={() => setIsMenuOpen(false)}>Home</Link>
-          <Link to="/cards" onClick={() => setIsMenuOpen(false)}>Cards</Link>
-          <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
-          <Link to="/about" onClick={() => setIsMenuOpen(false)}>About</Link>
+          <Link to="/" className="hover:text-blue-500">Home</Link>
+          <Link to="/cards" className="hover:text-blue-500">Cards</Link>
+          <Link to="/dashboard" className="hover:text-blue-500">Dashboard</Link>
+          <Link to="/about" className="hover:text-blue-500">About</Link>
 
           {isLoggedIn && (
-            <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+            <Link to="/profile" className="hover:text-blue-500">
               Profile
             </Link>
           )}
 
-          {/* ✅ MOBILE ROLE SELECT */}
+          {/* ROLE */}
           {isLoggedIn && (
             <select
               value={user?.role || "user"}
               onChange={(e) => {
-                switchRole(e.target.value);
-                showToast(`Switched to ${e.target.value} ✅`, "info");
+                switchRole?.(e.target.value);
+                showToast?.(`Switched to ${e.target.value} ✅`, "info");
               }}
-              className="w-full px-4 py-2 rounded border 
-                         bg-white text-black 
-                         dark:bg-slate-700 dark:text-white"
+              className="px-3 py-1 rounded border bg-white text-black dark:bg-slate-700 dark:text-white cursor-pointer"
             >
               <option value="user">User</option>
               <option value="admin">Admin</option>
@@ -146,7 +81,78 @@ const Header = () => {
           {/* THEME */}
           <button
             onClick={toggleTheme}
-            className="w-full bg-blue-500 text-white py-2 rounded"
+            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+          >
+            {theme === "dark" ? "Light" : "Dark"}
+          </button>
+
+          {/* AUTH */}
+          {isLoggedIn ? (
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+            >
+              Logout
+            </button>
+          ) : (
+            <Link to="/login">
+              <button className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">
+                Login
+              </button>
+            </Link>
+          )}
+        </nav>
+      </div>
+
+      {/* 📱 MOBILE MENU */}
+      {isMenuOpen && (
+        <div className="md:hidden bg-white dark:bg-slate-900 shadow px-5 py-5 flex flex-col space-y-4 text-lg font-medium">
+
+          <Link to="/" className="block hover:text-blue-500" onClick={() => setIsMenuOpen(false)}>
+            Home
+          </Link>
+
+          <Link to="/cards" className="block hover:text-blue-500" onClick={() => setIsMenuOpen(false)}>
+            Cards
+          </Link>
+
+          <Link to="/dashboard" className="block hover:text-blue-500" onClick={() => setIsMenuOpen(false)}>
+            Dashboard
+          </Link>
+
+          <Link to="/about" className="block hover:text-blue-500" onClick={() => setIsMenuOpen(false)}>
+            About
+          </Link>
+
+          {isLoggedIn && (
+            <Link
+              to="/profile"
+              className="block hover:text-blue-500"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Profile
+            </Link>
+          )}
+
+          {/* ROLE */}
+          {isLoggedIn && (
+            <select
+              value={user?.role || "user"}
+              onChange={(e) => {
+                switchRole?.(e.target.value);
+                showToast?.(`Switched to ${e.target.value} ✅`, "info");
+              }}
+              className="w-full px-4 py-2 rounded border text-base bg-white text-black dark:bg-slate-700 dark:text-white"
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          )}
+
+          {/* THEME */}
+          <button
+            onClick={toggleTheme}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded"
           >
             {theme === "dark" ? "Light Mode" : "Dark Mode"}
           </button>
@@ -155,13 +161,13 @@ const Header = () => {
           {isLoggedIn ? (
             <button
               onClick={handleLogout}
-              className="w-full bg-red-500 text-white py-2 rounded"
+              className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded"
             >
               Logout
             </button>
           ) : (
             <Link to="/login">
-              <button className="w-full bg-green-500 text-white py-2 rounded">
+              <button className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded">
                 Login
               </button>
             </Link>
