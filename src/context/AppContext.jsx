@@ -1,4 +1,4 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useEffect } from "react";
 
 export const AppContext = createContext();
 
@@ -8,37 +8,79 @@ export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [cards, setCards] = useState([]);
 
-  // ✅ LOGIN
+  // ✅ LOAD DATA FROM LOCALSTORAGE (FIX FOR LIVE + REFRESH)
+  useEffect(() => {
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+    const savedTheme = localStorage.getItem("theme");
+
+    if (savedUser) {
+      setUser(savedUser);
+      setIsLoggedIn(true);
+    }
+
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+  }, []);
+
+  // ✅ LOGIN (UPDATED)
   const login = (userData) => {
+    // 🔥 ensure role exists
+    const finalUser = {
+      ...userData,
+      role: userData.role || "user",
+    };
+
     setIsLoggedIn(true);
-    setUser(userData);
+    setUser(finalUser);
+
+    // ✅ SAVE
+    localStorage.setItem("user", JSON.stringify(finalUser));
   };
 
-  // ✅ LOGOUT
+  // ✅ LOGOUT (UPDATED)
   const logout = () => {
     setIsLoggedIn(false);
     setUser(null);
+
+    // ✅ CLEAR STORAGE
+    localStorage.removeItem("user");
   };
 
-  // ✅ PROFILE UPDATE
+  // ✅ PROFILE UPDATE (UPDATED)
   const updateProfile = (data) => {
-    setUser((prev) => ({
-      ...prev,
-      ...data,
-    }));
+    setUser((prev) => {
+      const updatedUser = {
+        ...prev,
+        ...data,
+      };
+
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      return updatedUser;
+    });
   };
 
-  // ✅ SWITCH ROLE 🔥
+  // ✅ SWITCH ROLE (UPDATED 🔥)
   const switchRole = (role) => {
-    setUser((prev) => ({
-      ...prev,
-      role,
-    }));
+    setUser((prev) => {
+      const updatedUser = {
+        ...prev,
+        role,
+      };
+
+      // ✅ SAVE ROLE
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      return updatedUser;
+    });
   };
 
-  // ✅ THEME
+  // ✅ THEME (UPDATED)
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+    setTheme((prev) => {
+      const newTheme = prev === "light" ? "dark" : "light";
+      localStorage.setItem("theme", newTheme);
+      return newTheme;
+    });
   };
 
   return (
@@ -52,7 +94,7 @@ export const AppProvider = ({ children }) => {
         logout,
         user,
         updateProfile,
-        switchRole, // ✅ IMPORTANT
+        switchRole,
         cards,
         setCards,
       }}

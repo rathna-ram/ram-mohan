@@ -7,7 +7,7 @@ const Login = () => {
   const { login } = useContext(AppContext);
   const navigate = useNavigate();
 
-  // ✅ Safe notification (prevents crash)
+  // ✅ Safe notification
   let showToast = () => {};
   try {
     const notification = useNotification();
@@ -18,13 +18,17 @@ const Login = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = (e) => {
     e.preventDefault();
 
-    // ✅ Fake login validation (for now)
-    if (email === "admin@gmail.com" && password === "1234") {
-      login({ email, role: "admin" }); // ✅ pass object
+    // ✅ SIMPLE AUTH LOGIC (IMPROVED)
+    if (password === "1234") {
+      // 🔥 Role logic
+      const role = email === "admin@gmail.com" ? "admin" : "user";
+
+      login({ email, role });
 
       showToast("Login successful 🎉", "success");
       navigate("/dashboard");
@@ -34,30 +38,61 @@ const Login = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-blue-100 to-gray-200">
+      
       <form
         onSubmit={handleLogin}
-        className="bg-white p-6 rounded shadow w-80"
+        className="bg-white p-8 rounded-2xl shadow-lg w-96 space-y-4"
       >
-        <h2 className="text-xl font-bold mb-4 text-center">Login</h2>
+        {/* 🔥 Title */}
+        <h2 className="text-2xl font-bold text-center">
+          Welcome Back 👋
+        </h2>
 
+        {/* 📧 Email */}
         <input
-          type="text"
-          placeholder="Email"
-          className="w-full mb-3 p-2 border rounded"
+          type="email"
+          placeholder="Enter your email"
+          className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full mb-4 p-2 border rounded"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        {/* 🔒 Password */}
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Enter password"
+            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
 
-        <button className="w-full bg-blue-500 text-white p-2 rounded">
+          {/* 👁 Show/Hide */}
+          <span
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-3 cursor-pointer text-sm text-blue-500"
+          >
+            {showPassword ? "Hide" : "Show"}
+          </span>
+        </div>
+
+        {/* 🔘 Remember + Forgot */}
+        <div className="flex justify-between items-center text-sm">
+          <label className="flex items-center space-x-2">
+            <input type="checkbox" />
+            <span>Remember me</span>
+          </label>
+
+          <span className="text-blue-500 cursor-pointer">
+            Forgot?
+          </span>
+        </div>
+
+        {/* 🚀 Button */}
+        <button className="w-full bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg transition">
           Login
         </button>
       </form>

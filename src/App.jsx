@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom"; // ❌ REMOVE HashRouter
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense, useContext } from "react";
 import Header from "./components/Header.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
@@ -17,48 +17,54 @@ function App() {
 
   return (
     <div className={theme === "dark" ? "dark" : ""}>
-      <Header />
+      
+      {/* ✅ FIX: Wrap everything inside HashRouter */}
+      <HashRouter>
+        <Header />
 
-      <Suspense
-        fallback={
-          <div className="flex justify-center items-center min-h-screen">
-            <h1 className="text-2xl">Loading...</h1>
-          </div>
-        }
-      >
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/about" element={<About />} />
+        <Suspense
+          fallback={
+            <div className="flex justify-center items-center min-h-screen">
+              <h1 className="text-2xl">Loading...</h1>
+            </div>
+          }
+        >
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/about" element={<About />} />
 
-          <Route
-            path="/cards"
-            element={
-              <ProtectedRoute>
-                <Cards />
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected */}
+            <Route
+              path="/cards"
+              element={
+                <ProtectedRoute>
+                  <Cards />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <UserProfile />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </Suspense>
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <UserProfile />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </Suspense>
+      </HashRouter>
     </div>
   );
 }
